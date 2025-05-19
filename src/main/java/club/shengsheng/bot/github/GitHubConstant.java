@@ -6,5 +6,6 @@ package club.shengsheng.bot.github;
 public interface GitHubConstant {
 
     String CI_APPROVE_LABEL_NAME = "ci-approve";
-
+    
+    String GITHUB_TOKEN_KEY = "GITHUB_OAUTH";
 }

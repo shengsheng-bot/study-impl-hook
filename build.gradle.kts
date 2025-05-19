@@ -24,6 +24,8 @@ repositories {
 }
 
 dependencies {
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.2.0.202503040940-r")
+    implementation("io.netty:netty-all:4.2.0.Final")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.google.guava:guava:33.4.8-jre")
     implementation("org.kohsuke:github-api:2.0-rc.3")

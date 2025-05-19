@@ -1,5 +1,6 @@
 package club.shengsheng.bot.handler;
 
+import club.shengsheng.bot.component.MergeEventLoop;
 import club.shengsheng.bot.github.Repository;
 import club.shengsheng.bot.github.WorkflowRun;
 import club.shengsheng.bot.github.WorkflowRunEvent;
@@ -34,10 +35,13 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
     @Autowired
     private GitHub gitHub;
 
+    @Autowired
+    private MergeEventLoop mergeEventLoop;
+
     private final Object dummy = new Object();
 
     /**
-     * key is run id , value is dummy object
+     * key is bit id {@link this#calculateId} , value is dummy object
      **/
     private final Cache<Long, Object> idempotentCache = CacheBuilder.newBuilder()
         .expireAfterWrite(2, TimeUnit.MINUTES)
@@ -62,13 +66,23 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
         }
     }
 
+    private long calculateId(GHPullRequest pullRequest) {
+        long repoId = pullRequest.getRepository().getId();
+        long prId = pullRequest.getId();
+        prId <<= 40;
+        return repoId | prId;
+    }
+
     private void handleSuccess(WorkflowRunEvent event) throws Exception {
-        System.out.println(event.getWorkflowRun().getId());
-        if (idempotentCache.asMap().putIfAbsent(event.getWorkflowRun().getId(), dummy) != null) {
+        GHPullRequest pr = getPrFromWorkflow(event);
+        if (pr == null) {
             return;
         }
-        GHPullRequest pr = getPrFromWorkflow(event);
+        if (idempotentCache.asMap().putIfAbsent(calculateId(pr), dummy) != null) {
+            return;
+        }
         pr.comment(String.format("@%s ,恭喜你的代码通过了CI流程，完成了本次自测", pr.getUser().getLogin()));
+        mergeEventLoop.mergeAndRevertAsync(pr);
     }
 
     private void handleFailed(WorkflowRunEvent event) throws IOException {
@@ -85,6 +99,9 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
             String message = String.format("@%s ,你的代码貌似有问题，请修改之后重新提交",
                 workflowRun.getHeadRepository().getOwner().getLogin());
             GHPullRequest pr = getPrFromWorkflow(event);
+            if (pr == null) {
+                return;
+            }
             pr.comment(message);
             return;
         }
@@ -100,7 +117,8 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
         for (GHPullRequest pr : repository.queryPullRequests().base("main").head(login + ":" + headBranch).list()) {
             return pr;
         }
-        throw new IllegalAccessError("no pr found");
+        return null;
     }
+
 
 }
