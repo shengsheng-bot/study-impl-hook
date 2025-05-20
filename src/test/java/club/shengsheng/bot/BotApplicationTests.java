@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -116,6 +117,16 @@ class BotApplicationTests {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    @Test
+    void testGit() throws Exception{
+        Git git = Git.cloneRepository()
+            .setURI("https://github.com/implement-study/ci-test/")
+            .setDirectory(new File("/Users/gongxuanzhang/dev/github/bot/ci-test"))
+            .call();
+        StoredConfig config = git.getRepository().getConfig();
+        System.out.println(1);
     }
 
 }

@@ -6,10 +6,9 @@ import io.netty.channel.DefaultEventLoop;
 import io.netty.channel.EventLoop;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
@@ -17,7 +16,6 @@ import org.springframework.context.SmartLifecycle;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.StreamSupport;
 
+import static club.shengsheng.bot.github.GitHubConstant.GITHUB_EMAIL_KEY;
 import static club.shengsheng.bot.github.GitHubConstant.GITHUB_TOKEN_KEY;
+import static club.shengsheng.bot.github.GitHubConstant.GITHUB_USER_KEY;
 
 /**
  * @author gongxuanzhangmelt@gmail.com
@@ -91,18 +91,20 @@ public class MergeEventLoop implements SmartLifecycle {
             .setURI(repository.getHttpTransportUrl())
             .setDirectory(dir)
             .call()) {
+            StoredConfig config = git.getRepository().getConfig();
+            config.setString("user", null, "name", System.getenv(GITHUB_USER_KEY));
+            config.setString("user", null, "email", System.getenv(GITHUB_EMAIL_KEY));
             Iterable<RevCommit> commits = git.log().add(git.getRepository().resolve("HEAD")).call();
             RevCommit revCommit = StreamSupport.stream(commits.spliterator(), false)
                 .filter(c -> c.getName().equals(lastCommitSha1))
                 .findFirst()
                 .orElseThrow(IllegalAccessError::new);
-            git.revert()
-                .include(revCommit).call();
-            CredentialsProvider provider = new UsernamePasswordCredentialsProvider(System.getenv(GITHUB_TOKEN_KEY), "");
+            git.revert().include(revCommit).call();
+            var provider = new UsernamePasswordCredentialsProvider(System.getenv(GITHUB_TOKEN_KEY), "");
             git.push().setCredentialsProvider(provider).call();
         } catch (Exception e) {
             log.error("revert failed", e);
-        }finally {
+        } finally {
             MoreFiles.deleteRecursively(dir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
         }
     }
@@ -111,7 +113,7 @@ public class MergeEventLoop implements SmartLifecycle {
     class Chooser {
         private final AtomicInteger index = new AtomicInteger(0);
 
-        private Map<Long, EventLoop> regedit = new ConcurrentHashMap<>();
+        private final Map<Long, EventLoop> regedit = new ConcurrentHashMap<>();
 
         EventLoop choose(long repositoryId) {
             return regedit.computeIfAbsent(repositoryId, k -> next());

@@ -56,7 +56,6 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
         }
         GHWorkflowRun.Conclusion conclusion = event.getWorkflowRun().getConclusion();
         if (conclusion.equals(GHWorkflowRun.Conclusion.FAILURE)) {
-            System.out.println(payload);
             handleFailed(event);
             return;
         }

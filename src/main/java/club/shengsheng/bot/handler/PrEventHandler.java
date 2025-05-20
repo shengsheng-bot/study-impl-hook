@@ -1,6 +1,5 @@
 package club.shengsheng.bot.handler;
 
-import club.shengsheng.bot.component.MergeEventLoop;
 import club.shengsheng.bot.github.PrEvent;
 import club.shengsheng.bot.github.ShengShengRule;
 import com.alibaba.fastjson2.JSONObject;

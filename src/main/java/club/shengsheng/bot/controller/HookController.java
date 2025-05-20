@@ -38,8 +38,6 @@ public class HookController {
     public String hook(@RequestHeader("X-GitHub-Event") String event,
                        @RequestBody String payload) throws Exception {
         GHEvent ghEvent = GHEvent.valueOf(event.toUpperCase(Locale.ROOT));
-        System.out.println(ghEvent);
-        System.out.println(payload);
         GitHubEventHandler handler = handlerMap.getOrDefault(ghEvent, unknownHandler);
         handler.handle(ghEvent, payload.substring("payload=".length()));
         return "ok";
