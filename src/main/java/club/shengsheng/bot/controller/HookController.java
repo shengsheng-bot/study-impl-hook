@@ -3,6 +3,7 @@ package club.shengsheng.bot.controller;
 import club.shengsheng.bot.handler.GitHubEventHandler;
 import club.shengsheng.bot.handler.Github;
 import club.shengsheng.bot.handler.UnknownHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.kohsuke.github.GHEvent;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import java.util.Map;
  **/
 @RestController
 @RequestMapping("/hook")
+@Slf4j
 public class HookController {
 
 
@@ -37,6 +39,7 @@ public class HookController {
     @PostMapping
     public String hook(@RequestHeader("X-GitHub-Event") String event,
                        @RequestBody String payload) throws Exception {
+        log.info("receive GitHub event: {}", event);
         GHEvent ghEvent = GHEvent.valueOf(event.toUpperCase(Locale.ROOT));
         GitHubEventHandler handler = handlerMap.getOrDefault(ghEvent, unknownHandler);
         handler.handle(ghEvent, payload.substring("payload=".length()));

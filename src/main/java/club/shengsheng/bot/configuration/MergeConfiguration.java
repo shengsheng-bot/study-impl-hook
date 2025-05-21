@@ -1,6 +1,6 @@
 package club.shengsheng.bot.configuration;
 
-import club.shengsheng.bot.component.MergeEventLoop;
+import club.shengsheng.bot.component.RepoEventLoop;
 import org.kohsuke.github.GitHub;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,8 +13,8 @@ public class MergeConfiguration {
 
 
     @Bean
-    public MergeEventLoop mergeEventLoop(GitHub gitHub) {
-        return new MergeEventLoop(4, gitHub);
+    public RepoEventLoop mergeEventLoop(GitHub gitHub) {
+        return new RepoEventLoop(4, gitHub);
     }
 
 }

@@ -1,12 +1,19 @@
 package club.shengsheng.bot.handler;
 
-import club.shengsheng.bot.component.MergeEventLoop;
+import club.shengsheng.bot.component.RepoEventLoop;
 import club.shengsheng.bot.github.Repository;
 import club.shengsheng.bot.github.WorkflowRun;
 import club.shengsheng.bot.github.WorkflowRunEvent;
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.kohsuke.github.GHEvent;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRepository;
@@ -16,19 +23,25 @@ import org.kohsuke.github.GitHub;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static club.shengsheng.bot.github.GitHubConstant.CI_APPROVE_LABEL_NAME;
+import static club.shengsheng.bot.github.GitHubConstant.GITHUB_EMAIL_KEY;
+import static club.shengsheng.bot.github.GitHubConstant.GITHUB_TOKEN_KEY;
+import static club.shengsheng.bot.github.GitHubConstant.GITHUB_USER_KEY;
 
 /**
  * @author gongxuanzhangmelt@gmail.com
  **/
 @Component
 @Github(GHEvent.WORKFLOW_RUN)
+@Slf4j
 public class WorkFlowRunHandler implements GitHubEventHandler {
 
 
@@ -36,7 +49,7 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
     private GitHub gitHub;
 
     @Autowired
-    private MergeEventLoop mergeEventLoop;
+    private RepoEventLoop repoEventLoop;
 
     private final Object dummy = new Object();
 
@@ -81,7 +94,43 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
             return;
         }
         pr.comment(String.format("@%s ,恭喜你的代码通过了CI流程，完成了本次自测", pr.getUser().getLogin()));
-        mergeEventLoop.mergeAndRevertAsync(pr);
+        repoEventLoop.execute(pr.getRepository(), () -> {
+            try {
+                mergeAndRevertAsync(pr);
+            } catch (IOException e) {
+                log.error("merge and revert failed", e);
+            }
+        });
+    }
+
+    public void mergeAndRevertAsync(GHPullRequest pullRequest) throws IOException {
+        GHRepository repository = pullRequest.getRepository();
+        pullRequest.merge("merge", null, GHPullRequest.MergeMethod.SQUASH);
+        revert(repository, pullRequest.getMergeCommitSha());
+    }
+
+    private void revert(GHRepository repository, String lastCommitSha1) throws IOException {
+        File dir = new File(repository.getName());
+        try (Git git = Git.cloneRepository()
+            .setURI(repository.getHttpTransportUrl())
+            .setDirectory(dir)
+            .call()) {
+            StoredConfig config = git.getRepository().getConfig();
+            config.setString("user", null, "name", System.getenv(GITHUB_USER_KEY));
+            config.setString("user", null, "email", System.getenv(GITHUB_EMAIL_KEY));
+            Iterable<RevCommit> commits = git.log().add(git.getRepository().resolve("HEAD")).call();
+            RevCommit revCommit = StreamSupport.stream(commits.spliterator(), false)
+                .filter(c -> c.getName().equals(lastCommitSha1))
+                .findFirst()
+                .orElseThrow(IllegalAccessError::new);
+            git.revert().include(revCommit).call();
+            var provider = new UsernamePasswordCredentialsProvider(System.getenv(GITHUB_TOKEN_KEY), "");
+            git.push().setCredentialsProvider(provider).call();
+        } catch (Exception e) {
+            log.error("revert failed", e);
+        } finally {
+            MoreFiles.deleteRecursively(dir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+        }
     }
 
     private void handleFailed(WorkflowRunEvent event) throws IOException {

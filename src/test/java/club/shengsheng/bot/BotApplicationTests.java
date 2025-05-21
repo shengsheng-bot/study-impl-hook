@@ -128,5 +128,11 @@ class BotApplicationTests {
         StoredConfig config = git.getRepository().getConfig();
         System.out.println(1);
     }
+    
+    @Test
+    void closePr(@Autowired GitHub gitHub) throws Exception{
+        GHRepository repository = gitHub.getRepository("implement-study/ci-test");
+        PagedIterable<GHPullRequest> list = repository.queryPullRequests().list();
+    }
 
 }
