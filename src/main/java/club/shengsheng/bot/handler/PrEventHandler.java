@@ -70,11 +70,11 @@ public class PrEventHandler implements GitHubEventHandler {
     }
 
     private void handleOpened(GHPullRequest pr) throws IOException {
-        pr.comment(String.format("@%s ,感谢你的提交！ 接下来的流程将由我自动为你处理", pr.getUser().getLogin()));
+        pr.comment("感谢你的提交！ 接下来的流程将由我自动为你处理");
     }
 
     private void handleSynchronize(GHPullRequest pr) throws IOException {
-        pr.comment(String.format("@%s ,你更新了代码！我将进行初步校验", pr.getUser().getLogin()));
+        pr.comment("你更新了代码！我将进行初步校验");
     }
 
     private List<String> validateModifyFile(GHPullRequest pr) throws IOException {

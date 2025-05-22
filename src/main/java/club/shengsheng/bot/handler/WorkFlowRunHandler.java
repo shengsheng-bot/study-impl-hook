@@ -111,6 +111,7 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
 
     private void revert(GHRepository repository, String lastCommitSha1) throws IOException {
         File dir = new File(repository.getName());
+        log.info("revert {}", lastCommitSha1);
         try (Git git = Git.cloneRepository()
             .setURI(repository.getHttpTransportUrl())
             .setDirectory(dir)
