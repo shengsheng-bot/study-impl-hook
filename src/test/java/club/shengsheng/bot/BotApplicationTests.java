@@ -1,5 +1,6 @@
 package club.shengsheng.bot;
 
+import club.shengsheng.bot.component.PullRequestScanner;
 import club.shengsheng.bot.github.PrEvent;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
@@ -118,9 +119,9 @@ class BotApplicationTests {
             e.printStackTrace();
         }
     }
-    
+
     @Test
-    void testGit() throws Exception{
+    void testGit() throws Exception {
         Git git = Git.cloneRepository()
             .setURI("https://github.com/implement-study/ci-test/")
             .setDirectory(new File("/Users/gongxuanzhang/dev/github/bot/ci-test"))
@@ -128,11 +129,15 @@ class BotApplicationTests {
         StoredConfig config = git.getRepository().getConfig();
         System.out.println(1);
     }
-    
+
     @Test
-    void closePr(@Autowired GitHub gitHub) throws Exception{
+    void closePr(@Autowired GitHub gitHub) throws Exception {
         GHRepository repository = gitHub.getRepository("implement-study/ci-test");
         PagedIterable<GHPullRequest> list = repository.queryPullRequests().list();
+    }
+
+    @Test
+    void testScanRepo(@Autowired GitHub gitHub, @Autowired PullRequestScanner scanner) throws IOException {
     }
 
 }

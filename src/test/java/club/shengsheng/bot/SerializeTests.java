@@ -26,5 +26,4 @@ class SerializeTests {
         WorkflowJobEvent event = jsonObject.toJavaObject(WorkflowJobEvent.class);
         System.out.println(event);
     }
-
 }

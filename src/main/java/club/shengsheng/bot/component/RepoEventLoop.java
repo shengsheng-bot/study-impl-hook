@@ -18,10 +18,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A wrapper of {@link EventLoop}
  * It is also a thread pool
  * This class has two core APIs:
- * {@link  this#execute(GHRepository, Runnable)} 
+ * {@link  this#execute(GHRepository, Runnable)}
  * This API guarantees that the same repository logic is executed by the same thread
- * 
- * 
+ * <p>
+ * <p>
  * {@link this#execute(GHPullRequest, Runnable)}
  * This API guarantees that the same pull request logic is executed by the same thread
  *

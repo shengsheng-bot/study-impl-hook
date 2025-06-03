@@ -35,6 +35,7 @@ import static club.shengsheng.bot.github.GitHubConstant.CI_APPROVE_LABEL_NAME;
 import static club.shengsheng.bot.github.GitHubConstant.GITHUB_EMAIL_KEY;
 import static club.shengsheng.bot.github.GitHubConstant.GITHUB_TOKEN_KEY;
 import static club.shengsheng.bot.github.GitHubConstant.GITHUB_USER_KEY;
+import static club.shengsheng.bot.github.GitHubConstant.SUCCESS_LABEL_NAME;
 
 /**
  * @author gongxuanzhangmelt@gmail.com
@@ -106,6 +107,7 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
     public void mergeAndRevertAsync(GHPullRequest pullRequest) throws IOException {
         GHRepository repository = pullRequest.getRepository();
         pullRequest.merge("merge", null, GHPullRequest.MergeMethod.SQUASH);
+        pullRequest.addLabels(SUCCESS_LABEL_NAME);
         revert(repository, pullRequest.getMergeCommitSha());
     }
 
