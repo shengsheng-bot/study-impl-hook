@@ -99,6 +99,11 @@ public class WorkFlowRunHandler implements GitHubEventHandler {
             try {
                 mergeAndRevertAsync(pr);
             } catch (IOException e) {
+                try {
+                    pr.comment(String.format("@%s ,但是你的PR不能合并，可能是有冲突，你可以sync一下你的分支刷新PR试试", pr.getUser().getLogin()));
+                } catch (IOException ex) {
+                    log.error("merge error and comment error");
+                }
                 log.error("merge and revert failed", e);
             }
         });

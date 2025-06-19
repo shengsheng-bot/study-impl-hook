@@ -132,8 +132,10 @@ class BotApplicationTests {
 
     @Test
     void closePr(@Autowired GitHub gitHub) throws Exception {
-        GHRepository repository = gitHub.getRepository("implement-study/ci-test");
+        GHRepository repository = gitHub.getRepository("implement-study/custom-classloader");
         PagedIterable<GHPullRequest> list = repository.queryPullRequests().list();
+        GHPullRequest pullRequest = repository.getPullRequest(26);
+        System.out.println(pullRequest);
     }
 
     @Test
